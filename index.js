@@ -96,6 +96,8 @@ client.on('message', msg => {
         state = constants.WAITING;
         serviceType = constants.WAITING;
         serviceUser = '';
+        lastCollected = '';
+        userInfo = {};
         console.log(userInfo);
       }
     }
