@@ -87,7 +87,7 @@ client.on('message', msg => {
         userInfo['serviceType'] = {"S" : serviceType};
         const written = writeData(userInfo);
         if (written) {
-          msg.reply(`Thank you ${userInfo.firstName['S']}, your ${serviceType.toLowerCase().replace('_', ' ')} service provider will be arriving at ${userInfo.time} on ${userInfo.date}!`);
+          msg.reply(`Thank you ${userInfo.firstName['S']}, your ${serviceType.toLowerCase().replace('_', ' ')} service provider will be arriving at ${userInfo.time['S']} on ${userInfo.date['S']}!`);
         } else {
           msg.reply(`Sorry ${userInfo.firstName['S']}, your ${serviceType.toLowerCase().replace('_', ' ')} request could not be processed. Please try again.`);
         }
@@ -173,6 +173,6 @@ function writeData(data) {
       return true;
     }
   });
-  return false;
+  return true;
 }
 client.login(config.token);
