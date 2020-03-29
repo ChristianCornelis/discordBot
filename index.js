@@ -81,7 +81,7 @@ client.on('message', msg => {
       } else if (lastCollected === 'phone') {
         userInfo['date'] = { "S": msg.content };
         lastCollected = 'date';
-        msg.reply(`What time do your require the ${serviceType.toLowerCase().replace('_', ' ')}?`);
+        msg.reply(`What time do you require the ${serviceType.toLowerCase().replace('_', ' ')}?`);
       } else if (lastCollected === 'date') {
         userInfo['time'] = { "S": msg.content };
         lastCollected = 'time';
