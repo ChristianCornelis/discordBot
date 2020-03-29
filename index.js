@@ -11,7 +11,7 @@ const client = new Discord.Client();
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
 });
-
+let serviceUser = '';
 let state = constants.WAITING;
 let serviceType = constants.WAITING;
 let userInfo = {};
@@ -19,10 +19,12 @@ let lastCollected = '';
 checkTableExists();
 
 client.on('message', msg => {
-  if (msg.content === '!service') {
+  console.log(msg);
+  if (msg.content === '!service' && state === constants.WAITING) {
     msg.reply('What kind of service would you like?\nAllowable options include `taxi`, `food delivery`, `home care`, and `cleaning`.');
     state = constants.SERVICE;
-  } else if (msg.content === '!cancel') {
+    serviceUser = msg.author.username;
+  } else if (msg.content === '!cancel' && msg.author.username === serviceUser) {
       msg.reply('Service order cancelled!');
       state = constants.WAITING;
       serviceType = constants.WAITING;
@@ -30,7 +32,7 @@ client.on('message', msg => {
     msg.reply("Hi, I'm ServiceBot!\nTo start a service booking with me, use `!service`.\nTo cancel a service booking at anytime, use `!cancel`.");
   } else if (msg.content === constants.MENTION) {
     msg.reply('Hey there! Valid commands to start a conversation with me are `!service` or `!help`');
-  } else if (state === constants.SERVICE && msg.author.username !== 'ServiceBot') {
+  } else if (state === constants.SERVICE && msg.author.username !== 'ServiceBot'  && msg.author.username === serviceUser) {
     if (msg.content.toLowerCase() === 'taxi') {
       serviceType = constants.TAXI;
       state = constants.COLLECTING;
@@ -50,7 +52,7 @@ client.on('message', msg => {
     } else {
       msg.reply('Please enter a valid choice.');
     }
-  } else if (state === constants.COLLECTING && msg.author.username !== 'ServiceBot') {
+  } else if (state === constants.COLLECTING && msg.author.username !== 'ServiceBot'  && msg.author.username === serviceUser) {
       if (lastCollected === ''){
         userInfo['firstName'] = { "S": msg.content };
         lastCollected = 'first'
