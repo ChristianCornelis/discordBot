@@ -19,7 +19,6 @@ let lastCollected = '';
 checkTableExists();
 
 client.on('message', msg => {
-  console.log(msg);
   if (msg.content === '!service' && state === constants.WAITING) {
     msg.reply('What kind of service would you like?\nAllowable options include `taxi`, `food delivery`, `home care`, and `cleaning`.');
     state = constants.SERVICE;
