@@ -1,6 +1,12 @@
 const Discord = require('discord.js');
 const config = require('./config.json')
 const constants = require('./constants.json')
+const AWS = require('aws-sdk');
+
+AWS.config.update({region: 'us-east-1'});  //set the region
+
+const ddb = new AWS.DynamoDB({apiVersion: '2012-08-10'});
+
 const client = new Discord.Client();
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
@@ -10,6 +16,8 @@ let state = constants.WAITING;
 let serviceType = constants.WAITING;
 let userInfo = {};
 let lastCollected = '';
+checkTableExists();
+
 client.on('message', msg => {
   if (msg.content === '!service') {
     msg.reply('What kind of service would you like?\nAllowable options include `taxi`, `food delivery`, `home care`, and `cleaning`.');
@@ -44,37 +52,44 @@ client.on('message', msg => {
     }
   } else if (state === constants.COLLECTING && msg.author.username !== 'ServiceBot') {
       if (lastCollected === ''){
-        userInfo['firstName'] = msg.content;
+        userInfo['firstName'] = { "S": msg.content };
         lastCollected = 'first'
         msg.reply('What is your last name?')
       } else if (lastCollected === 'first') {
-        userInfo['lastName'] = msg.content;
+        userInfo['lastName'] = { "S": msg.content };
         lastCollected = 'lastName';
         msg.reply('What is your street address?')
       } else if (lastCollected === 'lastName') {
-        userInfo['streetAddress'] = msg.content;
+        userInfo['streetAddress'] = { "S": msg.content };
         lastCollected = 'streetAddress';
         msg.reply('What city are you in?');
       } else if (lastCollected === 'streetAddress') {
-        userInfo['city'] = msg.content;
+        userInfo['city'] = { "S": msg.content };
         lastCollected = 'city';
         msg.reply('What is your email address?');
       } else if (lastCollected === 'city') {
-        userInfo['email'] = msg.content;
+        userInfo['email'] = { "S": msg.content };
         lastCollected = 'email';
         msg.reply('What is your phone number?');
       } else if (lastCollected === 'email') {
-        userInfo['phone'] = msg.content;
+        userInfo['phone'] = { "S": msg.content };
         lastCollected = 'phone';
         msg.reply(`What day do you require the ${serviceType.toLowerCase().replace('_', ' ')}?`);
       } else if (lastCollected === 'phone') {
-        userInfo['date'] = msg.content;
+        userInfo['date'] = { "S": msg.content };
         lastCollected = 'date';
         msg.reply(`What time do your require the ${serviceType.toLowerCase().replace('_', ' ')}?`);
       } else if (lastCollected === 'date') {
-        userInfo['time'] = msg.content;
+        userInfo['time'] = { "S": msg.content };
         lastCollected = 'time';
-        msg.reply(`Thank you ${userInfo.firstName}, your ${serviceType.toLowerCase().replace('_', ' ')} service provider will be arriving at ${userInfo.time} on ${userInfo.date}!`);
+        userInfo['serviceType'] = {"S" : serviceType};
+        const written = writeData(userInfo);
+        if (written) {
+          msg.reply(`Thank you ${userInfo.firstName['S']}, your ${serviceType.toLowerCase().replace('_', ' ')} service provider will be arriving at ${userInfo.time} on ${userInfo.date}!`);
+        } else {
+          msg.reply(`Sorry ${userInfo.firstName['S']}, your ${serviceType.toLowerCase().replace('_', ' ')} request could not be processed. Please try again.`);
+        }
+        
         state = constants.WAITING;
         serviceType = constants.WAITING;
         console.log(userInfo);
@@ -84,6 +99,10 @@ client.on('message', msg => {
     console.log(serviceType);
 });
 
+/**
+ * Function to respond to a service type selection.
+ * @param {*} msg 
+ */
 function respondToServiceSelection (msg) {
   let noun = "";
   switch(serviceType){
@@ -101,8 +120,57 @@ function respondToServiceSelection (msg) {
       break;
 
   }
-
+  
   msg.reply(`Okay, I'll get ${noun} to you soon! I just need some information from you first.\nWhat is your first name?`)
 };
 
+/**
+ * Method to check if the dynamoDB table exists for storing data. If not, it will create the table.
+ */
+function checkTableExists() {
+  ddb.listTables((err, data) => { 
+    if (err) {
+      console.log('Error', err.code);
+    } else {
+      console.log('Table names are ', data.TableNames);
+      if (!data.TableNames.includes(constants.TABLE_NAME)){
+        console.log("Creating DynamoDB table...");
+        ddb.createTable(constants.TABLE_PARAMS, (err, data) => {
+          if (err) {
+            console.log("Error when creating table", err);
+          } else {
+            console.log("Table successfully created!");
+            // console.log(ddb.describeTable(constants.TABLE_NAME));
+          }
+        });
+      } else {
+        console.log("Table exists!");
+        // console.log(ddb.describeTable(constants.TABLE_NAME));
+      }
+    }
+  });
+}
+
+/**
+ * Method to write user data to dynamoDB
+ * @param {*} data 
+ * @returns true if successful, false otherwise
+ */
+function writeData(data) {
+  const params = {
+    "TableName": constants.TABLE_NAME,
+    "Item": data
+  };
+
+  ddb.putItem(params, (err, data) => {
+    if (err) {
+      console.log("Error writing data to table ", err);
+      return false;
+    } else {
+      console.log("Data successfully written to table");
+      return true;
+    }
+  });
+  return false;
+}
 client.login(config.token);
