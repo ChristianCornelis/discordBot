@@ -28,6 +28,7 @@ client.on('message', msg => {
       msg.reply('Service order cancelled!');
       state = constants.WAITING;
       serviceType = constants.WAITING;
+      serviceUser = '';
   } else if (msg.content === '!help') {
     msg.reply("Hi, I'm ServiceBot!\nTo start a service booking with me, use `!service`.\nTo cancel a service booking at anytime, use `!cancel`.");
   } else if (msg.content === constants.MENTION) {
@@ -94,6 +95,7 @@ client.on('message', msg => {
         
         state = constants.WAITING;
         serviceType = constants.WAITING;
+        serviceUser = '';
         console.log(userInfo);
       }
     }
