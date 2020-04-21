@@ -1,4 +1,5 @@
-# discordBot
+# serviceBot
+A simple Discord bot to collect information about users requiring services such as their name, address, date for required service, etc...
 
 ## Requirements
 - A valid AWS account. Credentials must be stored in ~/.aws/credentials. A DynamoDB table named `services` is created as part of this application.
